@@ -1,17 +1,21 @@
 import os
 import logging
 import requests
+import textwrap
 import telegram
 from bs4 import BeautifulSoup
-from telegram.ext import Updater, MessageHandler, CommandHandler, Filters
+from telegram.ext import Updater, MessageHandler, CommandHandler, ConversationHandler, Filters
 from dotenv import load_dotenv
+from mu_functions import get_subjects, subject_list_to_message
 
 load_dotenv()
 TOKEN = os.environ['TOKEN']
 updater = Updater(TOKEN)
 bot = telegram.Bot(TOKEN)
 dispatcher = updater.dispatcher
-print(bot.get_me())
+print(bot.get_me()) 
+
+CHOOSE_BRANCH, CHOOSE_SUBJECT = range(2)
 
 def start(bot, update):
     """
@@ -20,45 +24,91 @@ def start(bot, update):
     print("Hello")
     message_text = "Hi, I'm a bot that sends you PDFs of previous question papers for engineering in Mumbai University"
 
-    bot.send_message(chat_id=update.message.chat_id, text = message_text) 
+    bot.send_message(chat_id = update.message.chat_id, text = message_text) 
 
 def question_paper(bot, update):
-    bot.send_chat_action(chat_id=update.message.chat_id, action='typing')
-    message_text = "/comps"
-    bot.sendMessage(chat_id=update.message.chat_id, text=message_text)
-
-def comps(bot, update):
-    url = "https://muquestionpapers.com/SECompsSem3.php"
-    r = requests.get(url)
-    html_content = r.text
-    soup = BeautifulSoup(html_content, 'html.parser')
-
-    headers = soup.find_all('th')
-    urllist = list()
-    i = 0
+    bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+    message_text = textwrap.dedent("""
+    Choose your year:
+    FE:
+    /FESem1
+    /FESem2
     
-    for lines in headers:
-        line = str(lines)
-        if 'pdf' in line:
-            line = line.split('"')[3]
-            urllist.append(line)
-            i+=1
+    Comps:
+    /SECompsSem3
+    /SECompsSem4
+    /TECompsSem5
+    /TECompsSem6
+    /BECompsSem7
+    /BECompsSem8
+
+    IT:
+    /SEITSem3
+    /SEITSem4
+    /TEITSem5
+    /TEITSem6
+    /BEITSem7
+    /BEITSem8
+    """)
+    bot.sendMessage(chat_id = update.message.chat_id, text = message_text)
+
+    return CHOOSE_BRANCH
+
+def choose_branch(bot, update, user_data):
+    user_data['semester'] = update.message.text
+    bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+    print(user_data['semester'])
+    link = "https://muquestionpapers.com" + user_data['semester'] + ".php"
+    print(link)
+    subject_list = get_subjects(link)
+    print(subject_list)
+    message_text = subject_list_to_message(subject_list)
+    print(message_text)
+    bot.send_message(chat_id = update.message.chat_id, text = message_text)
+
+    return CHOOSE_SUBJECT
     
-    for download_link in urllist:
-        base_url = "https://muquestionpapers.com"
-        url = base_url + "/" + download_link
-        bot.send_document(chat_id=update.message.chat_id, document=url)
 
-# handlers
-start_handler = CommandHandler('start', start)
-question_paper_handler = CommandHandler('question_paper', question_paper)
-comps_handler = CommandHandler('comps', comps)
-
-#dispatchers
-dispatcher.add_handler(start_handler)
-dispatcher.add_handler(question_paper_handler)
-dispatcher.add_handler(comps_handler)
+def choose_subject(bot, update, user_data):
+    user_data['subject'] = update.message.text
+    print(user_data['subject'])
+    
+    return ConversationHandler.END
 
 
-updater.start_polling()
+def cancel(bot, update):
+    bot.sendMessage(chat_id = update.message.chat_id, text = "Cancelled")
+    
+    return ConversationHandler.END    
+
+
+
+def main():
+    question_handler = ConversationHandler(
+        entry_points = [CommandHandler('question_paper', question_paper)],
+        
+        states = {
+            CHOOSE_BRANCH: [MessageHandler(Filters.command, callback = choose_branch, pass_user_data=True)],
+            CHOOSE_SUBJECT: [MessageHandler(Filters.command, callback = choose_subject, pass_user_data=True)]
+        },
+
+        fallbacks = [CommandHandler('cancel', cancel)]
+    )
+    
+    
+    # handlers
+    start_handler = CommandHandler('start', start)
+    
+    
+    #dispatchers
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(question_handler)
+
+    
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
 
