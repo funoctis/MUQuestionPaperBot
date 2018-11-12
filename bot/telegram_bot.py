@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import telegram
 from telegram.ext import Updater, MessageHandler, CommandHandler, ConversationHandler, Filters
 
-from mu_functions import get_page, get_subjects, subject_list_to_message, get_links_for_subject
+from mu_functions import get_page, get_subjects, subject_list_to_message
 
 load_dotenv()
 TOKEN = os.environ['TOKEN']
@@ -27,6 +27,9 @@ def start(bot, update):
     bot.send_message(chat_id = update.message.chat_id, text = message_text) 
 
 def question_paper(bot, update):
+    """
+    Asks  user to choose the particular branch and semester to get the subjects for.
+    """
     bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
     message_text = textwrap.dedent("""
     Choose your year:
@@ -42,6 +45,21 @@ def question_paper(bot, update):
     /SEITSem3    /SEITSem4
     /TEITSem5    /TEITSem6
     /BEITSem7    /BEITSem8
+
+    EXTC:
+    /SEExtcSem3    /SEExtcSem4
+    /TEExtcSem5    /TEExtcSem6
+    /BEExtcSem7    /BEExtcSem8
+
+    Mechanical:
+    /SEMechanicalSem3    /SEMechanicalSem4
+    /TEMechanicalSem5    /TEMechanicalSem6
+    /BEMechanicalSem7    /BEMechanicalSem8
+
+    Civil:
+    /SECivilSem3    /SECivilSem4
+    /TECivilSem5    /TECivilSem6
+    /BECivilSem7    /BECivilSem8
     """)
     bot.sendMessage(chat_id = update.message.chat_id, text = message_text)
 
@@ -49,6 +67,9 @@ def question_paper(bot, update):
 
 
 def choose_branch(bot, update, user_data):
+    """
+    Asks user to choose the subject to get the questions papers for. 
+    """
     user_data['semester'] = update.message.text
     bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
     link = "https://muquestionpapers.com" + user_data['semester'] + ".php"
@@ -63,6 +84,9 @@ def choose_branch(bot, update, user_data):
     
 
 def choose_subject(bot, update, user_data):
+    """
+    Fetches the pdf list for the chosen subject and sends them to the user.
+    """
     user_data['subject'] = update.message.text[1:]
     download_links = []
     tables = user_data['page'].find_all('table')
