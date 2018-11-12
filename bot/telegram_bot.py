@@ -1,12 +1,12 @@
 import os
 import logging
-import requests
 import textwrap
-import telegram
-from bs4 import BeautifulSoup
-from telegram.ext import Updater, MessageHandler, CommandHandler, ConversationHandler, Filters
 from dotenv import load_dotenv
-from mu_functions import get_subjects, subject_list_to_message
+
+import telegram
+from telegram.ext import Updater, MessageHandler, CommandHandler, ConversationHandler, Filters
+
+from mu_functions import get_page, get_subjects, subject_list_to_message, get_links_for_subject
 
 load_dotenv()
 TOKEN = os.environ['TOKEN']
@@ -31,47 +31,47 @@ def question_paper(bot, update):
     message_text = textwrap.dedent("""
     Choose your year:
     FE:
-    /FESem1
-    /FESem2
+    /FESem1    /FESem2
     
     Comps:
-    /SECompsSem3
-    /SECompsSem4
-    /TECompsSem5
-    /TECompsSem6
-    /BECompsSem7
-    /BECompsSem8
-
+    /SECompsSem3    /SECompsSem4
+    /TECompsSem5    /TECompsSem6
+    /BECompsSem7    /BECompsSem8
+    
     IT:
-    /SEITSem3
-    /SEITSem4
-    /TEITSem5
-    /TEITSem6
-    /BEITSem7
-    /BEITSem8
+    /SEITSem3    /SEITSem4
+    /TEITSem5    /TEITSem6
+    /BEITSem7    /BEITSem8
     """)
     bot.sendMessage(chat_id = update.message.chat_id, text = message_text)
 
     return CHOOSE_BRANCH
 
+
 def choose_branch(bot, update, user_data):
     user_data['semester'] = update.message.text
     bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-    print(user_data['semester'])
     link = "https://muquestionpapers.com" + user_data['semester'] + ".php"
-    print(link)
-    subject_list = get_subjects(link)
-    print(subject_list)
+    page = get_page(link)
+    user_data['page'] = page
+    subject_list = get_subjects(page)
+    user_data['subject_list'] = subject_list
     message_text = subject_list_to_message(subject_list)
-    print(message_text)
     bot.send_message(chat_id = update.message.chat_id, text = message_text)
 
     return CHOOSE_SUBJECT
     
 
 def choose_subject(bot, update, user_data):
-    user_data['subject'] = update.message.text
-    print(user_data['subject'])
+    user_data['subject'] = update.message.text[1:]
+    download_links = []
+    tables = user_data['page'].find_all('table')
+    index = int(user_data['subject'])
+    all_links = tables[index].find_all('a')     
+    for link in all_links:
+        download_links.append("https://muquestionpapers.com/" + link.get('href'))
+    for download_link in download_links:
+        bot.send_document(chat_id = update.message.chat_id, document = download_link)
     
     return ConversationHandler.END
 
