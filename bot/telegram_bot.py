@@ -22,14 +22,13 @@ def start(bot, update):
     """
     Sends initial message
     """
-    print("Hello")
+    
     message_text = "Hi, I'm a bot that sends you PDFs of previous question papers for engineering in Mumbai University"
-
     bot.send_message(chat_id = update.message.chat_id, text = message_text) 
 
 def question_paper(bot, update):
     """
-    Asks  user to choose the particular branch and semester to get the subjects for.
+    Asks  user to choose the particular year to get the subjects for.
     """
     bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
     message_text = "Choose year"
@@ -42,7 +41,7 @@ def question_paper(bot, update):
 
 def choose_branch(bot, update, user_data):
     """
-    Asks user to choose the subject to get the questions papers for. 
+    Asks user to choose the branch to get the questions papers for. 
     """
     if update.message.text == "/cancel":
         return ConversationHandler.END
@@ -63,6 +62,9 @@ def choose_branch(bot, update, user_data):
     
 
 def choose_semester(bot, update, user_data):
+    """
+    Asks user to choose the semester to get the questions papers for.
+    """
     if update.message.text == "/cancel":
         return ConversationHandler.END
     
@@ -85,17 +87,15 @@ def choose_semester(bot, update, user_data):
 
 def choose_subject(bot, update, user_data):
     """
-    Fetches the pdf list for the chosen subject and sends them to the user.
+    Asks user to choose the subject to get the questions papers for.
     """
     if update.message.text == "/cancel":
         return ConversationHandler.END
     
     else:
         user_data['semester'] = update.message.text
-        print(user_data['year'], user_data['branch'], user_data['semester'])
         base_url = "https://muquestionpapers.com/"
         page_url = base_url + user_data['year'] + user_data['branch'] + user_data['semester'] + ".php" 
-        print(page_url)
         user_data['page'] = get_page(page_url)
         subject_list = get_subjects(user_data['page'])
         message_text = subject_list_to_message(subject_list)
@@ -105,16 +105,15 @@ def choose_subject(bot, update, user_data):
 
 
 def send_documents(bot, update, user_data):
-    print("check1")
+    """
+    Finds download links for the user selected subject and sends the documents hosted at these links to the user.
+    """
     if update.message.text == "/cancel":
         return ConversationHandler.END
 
     else:
-        print("check2")
         user_data['subject'] = update.message.text[1:]
-        print(user_data['subject'], type(user_data['subject']))
         index = int(user_data['subject'])
-        print(index)
         tables = user_data['page'].find_all('table')
         all_links = tables[index].find_all('a')     
         download_links = []
@@ -163,4 +162,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
