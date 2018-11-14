@@ -4,6 +4,7 @@ import textwrap
 from dotenv import load_dotenv
 
 import telegram
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, MessageHandler, CommandHandler, ConversationHandler, Filters
 
 from mu_functions import get_page, get_subjects, subject_list_to_message
@@ -15,7 +16,7 @@ bot = telegram.Bot(TOKEN)
 dispatcher = updater.dispatcher
 print(bot.get_me()) 
 
-CHOOSE_BRANCH, CHOOSE_SUBJECT = range(2)
+CHOOSE_BRANCH, CHOOSE_SEMESTER, CHOOSE_SUBJECT, SEND_DOCUMENTS = range(4)
 
 def start(bot, update):
     """
@@ -31,37 +32,10 @@ def question_paper(bot, update):
     Asks  user to choose the particular branch and semester to get the subjects for.
     """
     bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-    message_text = textwrap.dedent("""
-    Choose your year:
-    FE:
-    /FESem1    /FESem2
-    
-    Comps:
-    /SECompsSem3    /SECompsSem4
-    /TECompsSem5    /TECompsSem6
-    /BECompsSem7    /BECompsSem8
-    
-    IT:
-    /SEITSem3    /SEITSem4
-    /TEITSem5    /TEITSem6
-    /BEITSem7    /BEITSem8
-
-    EXTC:
-    /SEExtcSem3    /SEExtcSem4
-    /TEExtcSem5    /TEExtcSem6
-    /BEExtcSem7    /BEExtcSem8
-
-    Mechanical:
-    /SEMechanicalSem3    /SEMechanicalSem4
-    /TEMechanicalSem5    /TEMechanicalSem6
-    /BEMechanicalSem7    /BEMechanicalSem8
-
-    Civil:
-    /SECivilSem3    /SECivilSem4
-    /TECivilSem5    /TECivilSem6
-    /BECivilSem7    /BECivilSem8
-    """)
-    bot.sendMessage(chat_id = update.message.chat_id, text = message_text)
+    message_text = "Choose year"
+    keyboard = [['FE'],['SE'],['TE'],['BE']]
+    reply_markup = ReplyKeyboardMarkup(keyboard)
+    bot.sendMessage(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
 
     return CHOOSE_BRANCH
 
@@ -70,34 +44,86 @@ def choose_branch(bot, update, user_data):
     """
     Asks user to choose the subject to get the questions papers for. 
     """
-    user_data['semester'] = update.message.text
-    bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-    link = "https://muquestionpapers.com" + user_data['semester'] + ".php"
-    page = get_page(link)
-    user_data['page'] = page
-    subject_list = get_subjects(page)
-    user_data['subject_list'] = subject_list
-    message_text = subject_list_to_message(subject_list)
-    bot.send_message(chat_id = update.message.chat_id, text = message_text)
-
-    return CHOOSE_SUBJECT
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
     
+    elif update.message.text == 'FE':
+        user_data['year'] = update.message.text
+        return CHOOSE_SEMESTER
+    
+    else:
+        user_data['year'] = update.message.text
+        bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+        message_text = "Choose branch"
+        keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
+        reply_markup = ReplyKeyboardMarkup(keyboard)
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+
+        return CHOOSE_SEMESTER
+    
+
+def choose_semester(bot, update, user_data):
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
+    
+    elif user_data['year'] == 'FE':
+        keyboard = [['Sem1'], ['Sem2']]
+        reply_markup = ReplyKeyboardMarkup(keyboard)
+        message_text = "Choose semester"
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+
+    else:
+        user_data['branch'] = update.message.text
+        bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+        message_text = "Choose semester"
+        keyboard = [['Sem3', 'Sem4'], ['Sem5', 'Sem6'], ['Sem7', 'Sem8']]
+        reply_markup = ReplyKeyboardMarkup(keyboard)
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+
+        return CHOOSE_SUBJECT
+
 
 def choose_subject(bot, update, user_data):
     """
     Fetches the pdf list for the chosen subject and sends them to the user.
     """
-    user_data['subject'] = update.message.text[1:]
-    download_links = []
-    tables = user_data['page'].find_all('table')
-    index = int(user_data['subject'])
-    all_links = tables[index].find_all('a')     
-    for link in all_links:
-        download_links.append("https://muquestionpapers.com/" + link.get('href'))
-    for download_link in download_links:
-        bot.send_document(chat_id = update.message.chat_id, document = download_link)
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
     
-    return ConversationHandler.END
+    else:
+        user_data['semester'] = update.message.text
+        print(user_data['year'], user_data['branch'], user_data['semester'])
+        base_url = "https://muquestionpapers.com/"
+        page_url = base_url + user_data['year'] + user_data['branch'] + user_data['semester'] + ".php" 
+        print(page_url)
+        user_data['page'] = get_page(page_url)
+        subject_list = get_subjects(user_data['page'])
+        message_text = subject_list_to_message(subject_list)
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = ReplyKeyboardRemove()) 
+
+        return SEND_DOCUMENTS
+
+
+def send_documents(bot, update, user_data):
+    print("check1")
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
+
+    else:
+        print("check2")
+        user_data['subject'] = update.message.text[1:]
+        print(user_data['subject'], type(user_data['subject']))
+        index = int(user_data['subject'])
+        print(index)
+        tables = user_data['page'].find_all('table')
+        all_links = tables[index].find_all('a')     
+        download_links = []
+        for link in all_links:
+            download_links.append("https://muquestionpapers.com/" + link.get('href'))
+        for download_link in download_links:
+            bot.send_document(chat_id = update.message.chat_id, document = download_link)
+
+        return ConversationHandler.END
 
 
 def cancel(bot, update):
@@ -112,8 +138,10 @@ def main():
         entry_points = [CommandHandler('question_paper', question_paper)],
         
         states = {
-            CHOOSE_BRANCH: [MessageHandler(Filters.command, callback = choose_branch, pass_user_data=True)],
-            CHOOSE_SUBJECT: [MessageHandler(Filters.command, callback = choose_subject, pass_user_data=True)]
+            CHOOSE_BRANCH: [MessageHandler(Filters.text, callback = choose_branch, pass_user_data=True)],
+            CHOOSE_SEMESTER: [MessageHandler(Filters.text, callback = choose_semester, pass_user_data=True)],
+            CHOOSE_SUBJECT: [MessageHandler(Filters.text, callback = choose_subject, pass_user_data=True)],
+            SEND_DOCUMENTS: [MessageHandler(Filters.command | Filters.text, callback = send_documents, pass_user_data=True)]
         },
 
         fallbacks = [CommandHandler('cancel', cancel)]
