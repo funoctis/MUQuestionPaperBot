@@ -46,17 +46,17 @@ def choose_branch(bot, update, user_data):
     if update.message.text == "/cancel":
         return ConversationHandler.END
     
-    elif update.message.text == 'FE':
-        user_data['year'] = update.message.text
-        return CHOOSE_SEMESTER
-    
     else:
-        user_data['year'] = update.message.text
-        bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-        message_text = "Choose branch"
-        keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
-        reply_markup = ReplyKeyboardMarkup(keyboard)
-        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+        if update.message.text == 'FE':
+            user_data['year'] = update.message.text
+            
+        else:
+            user_data['year'] = update.message.text
+            bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+            message_text = "Choose branch"
+            keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
+            reply_markup = ReplyKeyboardMarkup(keyboard)
+            bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
 
         return CHOOSE_SEMESTER
     
@@ -69,10 +69,13 @@ def choose_semester(bot, update, user_data):
         return ConversationHandler.END
     
     elif user_data['year'] == 'FE':
+        user_data['branch'] = "Common"
         keyboard = [['Sem1'], ['Sem2']]
         reply_markup = ReplyKeyboardMarkup(keyboard)
         message_text = "Choose semester"
         bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+
+        return CHOOSE_SUBJECT
 
     else:
         user_data['branch'] = update.message.text
@@ -99,11 +102,17 @@ def choose_subject(bot, update, user_data):
     """
     if update.message.text == "/cancel":
         return ConversationHandler.END
-    
+
     else:
         user_data['semester'] = update.message.text
         base_url = "https://muquestionpapers.com/"
-        page_url = base_url + user_data['year'] + user_data['branch'] + user_data['semester'] + ".php" 
+        
+        if user_data['year'] == 'FE':
+            page_url = base_url + user_data['year'] + user_data['semester'] + ".php"
+            
+        else:
+            page_url = base_url + user_data['year'] + user_data['branch'] + user_data['semester'] + ".php" 
+            
         user_data['page'] = get_page(page_url)
         subject_list = get_subjects(user_data['page'])
         message_text = subject_list_to_message(subject_list)
@@ -118,7 +127,6 @@ def send_documents(bot, update, user_data):
         return ConversationHandler.END
 
     else:
-        
         user_data['subject'] = update.message.text[1:]
         index = int(user_data['subject'])
         tables = user_data['page'].find_all('table')
