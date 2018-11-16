@@ -47,16 +47,12 @@ def choose_branch(bot, update, user_data):
         return ConversationHandler.END
     
     else:
-        if update.message.text == 'FE':
-            user_data['year'] = update.message.text
-            
-        else:
-            user_data['year'] = update.message.text
-            bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
-            message_text = "Choose branch"
-            keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
-            reply_markup = ReplyKeyboardMarkup(keyboard)
-            bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+        user_data['year'] = update.message.text
+        bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+        message_text = "Choose branch"
+        keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
+        reply_markup = ReplyKeyboardMarkup(keyboard)
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
 
         return CHOOSE_SEMESTER
     
