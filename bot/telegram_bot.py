@@ -22,7 +22,11 @@ def start(bot, update):
     """
     Sends initial message
     """
-    message_text = "Hi, I'm a bot that sends you PDFs of previous question papers for engineering in Mumbai University"
+    message_text = textwrap.dedent("""
+    Hi, I'm a bot that sends you PDFs of previous question papers for engineering in Mumbai University. 
+    Use /question_paper to get the PDFs.
+    Cancel with /cancel.
+    """)
     bot.send_message(chat_id = update.message.chat_id, text = message_text) 
 
 def question_paper(bot, update):
@@ -64,22 +68,15 @@ def choose_semester(bot, update, user_data):
     if update.message.text == "/cancel":
         return ConversationHandler.END
     
-    elif user_data['year'] == 'FE':
-        user_data['branch'] = "Common"
-        keyboard = [['Sem1'], ['Sem2']]
-        reply_markup = ReplyKeyboardMarkup(keyboard)
-        message_text = "Choose semester"
-        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
-
-        return CHOOSE_SUBJECT
-
     else:
         user_data['branch'] = update.message.text
         bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
         message_text = "Choose semester"
         
         keyboard = []
-        if user_data['year'] == 'SE':
+        if user_data['year'] =='FE':
+            keyboard = [['Sem1'], ['Sem2']]
+        elif user_data['year'] == 'SE':
             keyboard = [['Sem3'],['Sem4']]
         elif user_data['year'] == 'TE':
             keyboard = [['Sem5'],['Sem6']]
@@ -118,7 +115,9 @@ def choose_subject(bot, update, user_data):
 
 
 def send_documents(bot, update, user_data):
-    
+    """
+    Gets links for the specified subject and sends the PDFs to the user. 
+    """
     if update.message.text == "/cancel":
         return ConversationHandler.END
 
