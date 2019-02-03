@@ -11,6 +11,9 @@ from mu_functions import get_page, get_subjects, subject_list_to_message
 
 load_dotenv()
 TOKEN = os.environ['TOKEN']
+PORT = int(os.environ.get('PORT', '8443')) # Default port is 8443 if PORT isn't set
+APP_NAME = os.environ['APP_NAME']
+
 updater = Updater(TOKEN)
 bot = telegram.Bot(TOKEN)
 dispatcher = updater.dispatcher
@@ -142,6 +145,9 @@ def cancel(bot, update):
 
 
 def main():
+    # handlers
+    start_handler = CommandHandler('start', start)
+
     question_handler = ConversationHandler(
         entry_points = [CommandHandler('question_paper', question_paper)],
         
@@ -156,19 +162,18 @@ def main():
     )
     
     
-    # handlers
-    start_handler = CommandHandler('start', start)
-    
-    
     #dispatchers
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(question_handler)
 
-    
-    updater.start_polling()
+    webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
+
+    updater.start_webhook(listen="0.0.0.0",
+                          port=PORT,
+                          url_path=TOKEN)
+    updater.bot.set_webhook(webhook_url)
     updater.idle()
 
 
 if __name__ == '__main__':
     main()
-
