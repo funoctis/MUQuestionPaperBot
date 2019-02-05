@@ -1,5 +1,5 @@
 # MUQuestionPaperBot
-[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-green.svg)](https://t.me/SJCET_MIS_BOT)
+[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-green.svg)](https://t.me/MUQuestionPaperBot)
 
 This is a Telegram chatbot that fetches PDFs of questions papers that have been asked by the Mumbai University. 
 
