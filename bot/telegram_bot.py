@@ -12,8 +12,8 @@ from syllabus import dictionary
 
 load_dotenv()
 TOKEN = os.environ['TOKEN']
-#PORT = int(os.environ.get('PORT', '8443')) # Default port is 8443 if PORT isn't set
-#APP_NAME = os.environ['APP_NAME']
+PORT = int(os.environ.get('PORT', '8443')) # Default port is 8443 if PORT isn't set
+APP_NAME = os.environ['APP_NAME']
 
 updater = Updater(TOKEN)
 bot = telegram.Bot(TOKEN)
@@ -218,14 +218,14 @@ def main():
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(question_handler)
     dispatcher.add_handler(syllabus_handler)
-    updater.start_polling()
-    #webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
+    
+    webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
 
-    #updater.start_webhook(listen="0.0.0.0",
-                          #port=PORT,
-                          #url_path=TOKEN)
-    #updater.bot.set_webhook(webhook_url)
-    #updater.idle()
+    updater.start_webhook(listen="0.0.0.0",
+                          port=PORT,
+                          url_path=TOKEN)
+    updater.bot.set_webhook(webhook_url)
+    updater.idle()
 
 
 if __name__ == '__main__':
