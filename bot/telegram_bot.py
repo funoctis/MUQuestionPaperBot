@@ -20,6 +20,9 @@ bot = telegram.Bot(TOKEN)
 dispatcher = updater.dispatcher
 print(bot.get_me()) 
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                     level=logging.INFO)
+
 CHOOSE_BRANCH, CHOOSE_SEMESTER, CHOOSE_SUBJECT, SEND_DOCUMENTS = range(4)
 SYLLABUS_YEAR, SEND_SYLLABUS = range(2)
 
