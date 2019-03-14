@@ -222,14 +222,18 @@ def main():
     dispatcher.add_handler(question_handler)
     dispatcher.add_handler(syllabus_handler)
     
-    webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
-
-    updater.start_webhook(listen="0.0.0.0",
-                          port=PORT,
-                          url_path=TOKEN)
-    updater.bot.set_webhook(webhook_url)
-    updater.idle()
+    if DEBUG:
+        updater.start_polling(clean=True)
+        updater.idle()
+    else:
+        webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
+        updater.start_webhook(listen="0.0.0.0",
+                            port=PORT,
+                            url_path=TOKEN)
+        updater.bot.set_webhook(webhook_url)
+        updater.idle()
 
 
 if __name__ == '__main__':
+    DEBUG = False       #When testing locally, change this to True
     main()
