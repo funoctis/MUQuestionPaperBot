@@ -235,5 +235,5 @@ def main():
 
 
 if __name__ == '__main__':
-    DEBUG = True       #When testing locally, change this to True.
+    DEBUG = False       #When testing locally, change this to True
     main()
