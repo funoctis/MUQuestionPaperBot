@@ -226,7 +226,7 @@ def main():
         updater.start_polling(clean=True)
         updater.idle()
     else:
-        webhook_url = "https://{}.azurewebsites.net/{}".format(APP_NAME, TOKEN)
+        webhook_url = "https://{}.herokuapp.com/{}".format(APP_NAME, TOKEN)
         updater.start_webhook(listen="0.0.0.0",
                             port=PORT,
                             url_path=TOKEN)
