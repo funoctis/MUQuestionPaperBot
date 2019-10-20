@@ -1,3 +1,8 @@
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import ConversationHandler
+
+SYLLABUS_YEAR, SEND_SYLLABUS = range(2)
+
 branches = ["Comps", "Civil", "IT", "Extc", "Mechanical"]
 
 syllabi = [{"Second Year (S.E.) Semester 3&4 (Choice Based)":"https://muquestionpapers.com/download/syllabus/Comps/SE-Comps_CBCGS_Syllabus.pdf",
@@ -11,3 +16,41 @@ syllabi = [{"Second Year (S.E.) Semester 3&4 (Choice Based)":"https://muquestion
         ]
 
 dictionary = dict(zip(branches, syllabi))
+
+def syllabus(bot, update):
+    """
+    Entry point for the conversation to download syllabus.
+    Asks user to choose the particular branch to get the syllabus for.
+    """
+    bot.send_chat_action(chat_id = update.message.chat_id, action = 'typing')
+    message_text = "Choose branch"
+    keyboard = [['Comps', 'IT', 'Extc'], ['Civil', 'Mechanical']]
+    reply_markup = ReplyKeyboardMarkup(keyboard)
+    bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+
+    return SYLLABUS_YEAR
+
+
+def syllabus_branch(bot, update, user_data):
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
+
+    else:
+        user_data["Branch"] = update.message.text
+        message_text = "Choose syllabus"
+        keyboard = [[key] for key in dictionary[user_data["Branch"]]]
+        reply_markup = ReplyKeyboardMarkup(keyboard)
+        bot.send_message(chat_id = update.message.chat_id, text = message_text, reply_markup = reply_markup)
+        return SEND_SYLLABUS
+
+
+def send_syllabus(bot, update, user_data):
+    if update.message.text == "/cancel":
+        return ConversationHandler.END
+
+    else:
+        user_data["syllabus"] = update.message.text
+        syllabus_link = dictionary[user_data["Branch"]][user_data["syllabus"]]
+        bot.send_message(chat_id = update.message.chat_id, text = user_data["syllabus"], reply_markup = ReplyKeyboardRemove())
+        bot.send_document(chat_id = update.message.chat_id, document = syllabus_link)
+        return ConversationHandler.END
